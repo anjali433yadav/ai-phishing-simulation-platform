@@ -19,7 +19,7 @@ os.environ.update({
     "RATE_LIMIT_AUTH": "1000",
     "RATE_LIMIT_AI": "1000",
     "RATE_LIMIT_REPORT": "1000",
-    "JWT_SECRET": "test-secret-0123456789abcdef0123456789abcdef",
+    "JWT_SECRET": "x" * 48,
 })
 
 import pytest  # noqa: E402

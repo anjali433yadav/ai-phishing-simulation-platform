@@ -51,23 +51,40 @@ jobs:
         with: { python-version: "3.12" }
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
-      - name: Start backend (SQLite, demo mode)
-        working-directory: backend
-        run: |
-          pip install -r requirements.txt
-          alembic upgrade head && python -m app.seed
-          nohup uvicorn app.main:app --port 8001 > uvicorn.log 2>&1 &
-      - name: Build + start frontend
+      - name: Prepare E2E environment
         working-directory: frontend
         run: |
-          npm ci && npm run build
-          nohup npx next start -p 3000 > next.log 2>&1 &
+          pip install -r ../backend/requirements.txt
+          (cd ../backend && alembic upgrade head && python -m app.seed)
+          npm ci
+          npm run build
           npx playwright install --with-deps chromium
-          npx wait-on -t 60000 http://localhost:3000/login http://localhost:8001/health/ready
-      - name: Playwright
+
+      - name: Start services and run Playwright
         working-directory: frontend
         env: { PW_CHANNEL: chromium }
-        run: npx playwright test
+        run: |
+          set -euo pipefail
+          (cd ../backend && exec uvicorn app.main:app --host 127.0.0.1 --port 8001) > ../uvicorn.log 2>&1 &
+          backend_pid=$!
+          npx next start -p 3000 > ../next.log 2>&1 &
+          frontend_pid=$!
+
+          cleanup() {
+            status=$?
+            kill "$frontend_pid" "$backend_pid" 2>/dev/null || true
+            if [ "$status" -ne 0 ]; then
+              echo "Backend log:"
+              cat ../uvicorn.log || true
+              echo "Frontend log:"
+              cat ../next.log || true
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
+
+          npx wait-on -t 60000 http://localhost:3000/login http://localhost:8001/health/ready
+          npx playwright test
 
   security:
     name: Security scans
