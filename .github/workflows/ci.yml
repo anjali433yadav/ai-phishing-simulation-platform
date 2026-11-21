@@ -62,12 +62,14 @@ jobs:
 
       - name: Start services and run Playwright
         working-directory: frontend
-        env: { PW_CHANNEL: chromium }
+        env:
+          PW_CHANNEL: chromium
+          E2E_BASE_URL: http://127.0.0.1:3000
         run: |
           set -euo pipefail
           (cd ../backend && exec uvicorn app.main:app --host 127.0.0.1 --port 8001) > ../uvicorn.log 2>&1 &
           backend_pid=$!
-          npx next start -p 3000 > ../next.log 2>&1 &
+          PORT=3000 HOSTNAME=127.0.0.1 node .next/standalone/server.js > ../next.log 2>&1 &
           frontend_pid=$!
 
           cleanup() {
@@ -83,7 +85,7 @@ jobs:
           }
           trap cleanup EXIT
 
-          npx wait-on -t 60000 http://localhost:3000/login http://localhost:8001/health/ready
+          npx wait-on -t 60000 http://127.0.0.1:3000/login http://127.0.0.1:8001/health/ready
           npx playwright test
 
   security:
