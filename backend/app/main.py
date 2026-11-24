@@ -98,7 +98,9 @@ def create_app() -> FastAPI:
         return response
 
     app.add_middleware(GZipMiddleware, minimum_size=1000)
-    app.add_middleware(CORSMiddleware, allow_origins=[s.frontend_origin], allow_credentials=True,
+    app.add_middleware(CORSMiddleware, allow_origins=[s.frontend_origin],
+                       allow_origin_regex=r"https://.*\.onrender\.com",
+                       allow_credentials=True,
                        allow_methods=["GET", "POST", "PATCH", "DELETE"],
                        allow_headers=["Content-Type", "X-CSRF-Token", "Authorization", "X-API-Key", "X-Request-ID"])
 

@@ -23,11 +23,10 @@ services:
         value: sqlite:////data/phishguard.db
       - key: CHROMA_PATH
         value: /data/chroma
-      - key: FRONTEND_ORIGIN
-        value: https://phishguard-web-18s6.onrender.com
-      # Live Gemini via the OpenAI-compatible API. OPENAI_API_KEY is set in the Render dashboard (never commit keys).
+      # AI Provider: default to 'demo' for immediate zero-config deployment.
+      # To enable real AI, set AI_PROVIDER=openai and supply your Gemini key in OPENAI_API_KEY.
       - key: AI_PROVIDER
-        value: openai
+        value: demo
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_BASE_URL
@@ -45,6 +44,9 @@ services:
     envVars:
       - key: PORT
         value: "3000"
-      # Baked in at build time (Next.js rewrites). Must equal the API service's public URL.
+      # Baked in at build time (Next.js rewrites). Automatically pulls the public URL of phishguard-api.
       - key: BACKEND_URL
-        value: https://phishguard-api-y6kp.onrender.com
+        fromService:
+          type: web
+          name: phishguard-api
+          property: url
